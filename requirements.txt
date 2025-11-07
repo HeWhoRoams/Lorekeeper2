@@ -19,11 +19,14 @@ openai
 faster_whisper
 speechrecognition
 
+# WhisperX for transcription with speaker diarization
+whisperx
+
 # torch support of cuda 12
 #--extra-index-url https://download.pytorch.org/whl/cu121
 #torch
 
 # torch cpu only support
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch 
+torch
 

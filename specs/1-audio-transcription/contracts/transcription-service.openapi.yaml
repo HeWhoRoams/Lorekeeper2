@@ -1,0 +1,125 @@
+openapi: 3.0.0
+info:
+  title: Audio Transcription Service API
+  version: 1.0.0
+paths:
+  /transcribe:
+    post:
+      summary: Transcribe an audio file
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                audio_path:
+                  type: string
+                  description: Path to the WAV audio file
+                metadata_path:
+                  type: string
+                  description: Path to the session metadata JSON
+                enable_diarization:
+                  type: boolean
+                  default: false
+                  description: Whether to perform speaker diarization
+              required:
+                - audio_path
+                - metadata_path
+      responses:
+        '200':
+          description: Transcription completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptionResult'
+        '400':
+          description: Invalid input or transcription failed
+  /validate-transcript:
+    post:
+      summary: Validate a transcript against schema
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                transcript_path:
+                  type: string
+                  description: Path to the transcript JSON file
+              required:
+                - transcript_path
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  errors:
+                    type: array
+                    items:
+                      type: string
+components:
+  schemas:
+    TranscriptSegment:
+      type: object
+      properties:
+        start_time:
+          type: number
+          format: float
+        end_time:
+          type: number
+          format: float
+        text:
+          type: string
+        speaker_label:
+          type: string
+          nullable: true
+        words:
+          type: array
+          items:
+            type: object
+            properties:
+              word:
+                type: string
+              start:
+                type: number
+                format: float
+              end:
+                type: number
+                format: float
+              confidence:
+                type: number
+                format: float
+    TranscriptionResult:
+      type: object
+      properties:
+        transcript_path:
+          type: string
+        log_path:
+          type: string
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/TranscriptSegment'
+        log:
+          type: object
+          properties:
+            timestamp:
+              type: string
+            runtime:
+              type: number
+              format: float
+            model_name:
+              type: string
+            accuracy_metrics:
+              type: object
+            errors:
+              type: array
+              items:
+                type: string

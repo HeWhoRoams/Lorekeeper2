@@ -1,0 +1,62 @@
+{
+  "metadata": {
+    "guild_id": "123456789012345678",
+    "channel_id": "987654321098765432",
+    "start_time": 1705334400.0,
+    "end_time": 1705334410.0,
+    "sample_rate": 16000,
+    "created_at": "2025-11-07T10:00:15",
+    "format_version": "1.0",
+    "transcription_model": "large-v3",
+    "total_segments": 2,
+    "total_duration": 10.0
+  },
+  "segments": [
+    {
+      "start_time": 0.0,
+      "end_time": 5.0,
+      "speaker": "SPEAKER_00",
+      "text": "Hello, this is a test transcription.",
+      "words": [
+        {"word": "Hello", "start": 0.0, "end": 0.5, "confidence": 0.98},
+        {"word": "this", "start": 0.6, "end": 0.8, "confidence": 0.97},
+        {"word": "is", "start": 0.85, "end": 1.0, "confidence": 0.99},
+        {"word": "a", "start": 1.05, "end": 1.15, "confidence": 0.98},
+        {"word": "test", "start": 1.2, "end": 1.5, "confidence": 0.96},
+        {"word": "transcription", "start": 1.6, "end": 2.5, "confidence": 0.95}
+      ]
+    },
+    {
+      "start_time": 5.5,
+      "end_time": 10.0,
+      "speaker": "SPEAKER_00",
+      "text": "The quick brown fox jumps over the lazy dog.",
+      "words": [
+        {"word": "The", "start": 5.5, "end": 5.7, "confidence": 0.99},
+        {"word": "quick", "start": 5.75, "end": 6.0, "confidence": 0.97},
+        {"word": "brown", "start": 6.1, "end": 6.4, "confidence": 0.98},
+        {"word": "fox", "start": 6.5, "end": 6.8, "confidence": 0.99},
+        {"word": "jumps", "start": 6.9, "end": 7.3, "confidence": 0.96},
+        {"word": "over", "start": 7.4, "end": 7.7, "confidence": 0.98},
+        {"word": "the", "start": 7.75, "end": 7.9, "confidence": 0.99},
+        {"word": "lazy", "start": 8.0, "end": 8.4, "confidence": 0.97},
+        {"word": "dog", "start": 8.5, "end": 8.9, "confidence": 0.98}
+      ]
+    }
+  ],
+  "log": {
+    "model": "large-v3",
+    "language": "en",
+    "duration": 10.0,
+    "timestamp": "2025-11-07T10:00:15",
+    "runtime_seconds": 2.5,
+    "model_name": "large-v3",
+    "accuracy_metrics": {
+      "average_confidence": 0.975,
+      "word_level_confidence": 0.975,
+      "total_words": 15
+    },
+    "errors": [],
+    "successful": true
+  }
+}

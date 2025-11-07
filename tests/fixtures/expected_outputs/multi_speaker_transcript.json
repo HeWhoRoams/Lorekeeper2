@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "guild_id": "123456789012345678",
+    "channel_id": "987654321098765432",
+    "start_time": 1705334400.0,
+    "end_time": 1705334430.0,
+    "sample_rate": 16000,
+    "users": {
+      "111111111111111111": {
+        "player": "Alice",
+        "character": "Elara"
+      },
+      "222222222222222222": {
+        "player": "Bob",
+        "character": "Thorne"
+      }
+    }
+  },
+  "segments": [
+    {
+      "start_time": 0.5,
+      "end_time": 3.2,
+      "speaker": "SPEAKER_00",
+      "text": "Hello everyone, this is Elara speaking.",
+      "words": [
+        {"word": "Hello", "start": 0.5, "end": 0.8, "confidence": 0.95},
+        {"word": "everyone", "start": 0.9, "end": 1.3, "confidence": 0.92},
+        {"word": "this", "start": 1.4, "end": 1.6, "confidence": 0.98},
+        {"word": "is", "start": 1.7, "end": 1.8, "confidence": 0.99},
+        {"word": "Elara", "start": 1.9, "end": 2.3, "confidence": 0.88},
+        {"word": "speaking", "start": 2.4, "end": 3.2, "confidence": 0.91}
+      ]
+    },
+    {
+      "start_time": 4.1,
+      "end_time": 7.5,
+      "speaker": "SPEAKER_01",
+      "text": "Greetings Elara, Thorne here. How are you?",
+      "words": [
+        {"word": "Greetings", "start": 4.1, "end": 4.6, "confidence": 0.93},
+        {"word": "Elara", "start": 4.7, "end": 5.1, "confidence": 0.89},
+        {"word": "Thorne", "start": 5.5, "end": 5.9, "confidence": 0.87},
+        {"word": "here", "start": 6.0, "end": 6.3, "confidence": 0.96},
+        {"word": "How", "start": 6.6, "end": 6.8, "confidence": 0.97},
+        {"word": "are", "start": 6.9, "end": 7.0, "confidence": 0.98},
+        {"word": "you", "start": 7.1, "end": 7.5, "confidence": 0.94}
+      ]
+    },
+    {
+      "start_time": 8.2,
+      "end_time": 11.8,
+      "speaker": "SPEAKER_00",
+      "text": "I'm doing well, thank you for asking.",
+      "words": [
+        {"word": "I'm", "start": 8.2, "end": 8.4, "confidence": 0.99},
+        {"word": "doing", "start": 8.5, "end": 8.9, "confidence": 0.96},
+        {"word": "well", "start": 9.0, "end": 9.4, "confidence": 0.97},
+        {"word": "thank", "start": 9.8, "end": 10.1, "confidence": 0.95},
+        {"word": "you", "start": 10.2, "end": 10.5, "confidence": 0.98},
+        {"word": "for", "start": 10.6, "end": 10.8, "confidence": 0.99},
+        {"word": "asking", "start": 10.9, "end": 11.8, "confidence": 0.93}
+      ]
+    }
+  ],
+  "log": {
+    "model": "large-v3",
+    "language": "en",
+    "duration": 30.0,
+    "diarization_enabled": true,
+    "num_speakers": 2
+  }
+}

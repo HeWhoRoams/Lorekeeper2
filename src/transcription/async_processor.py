@@ -71,6 +71,7 @@ class AsyncProcessor:
             RuntimeError: If executor is not started
         """
         if not self.executor:
+            self.logger.error("Async processor not started. Use start() or async context manager.")
             raise RuntimeError("Async processor not started. Use start() or async context manager.")
 
         loop = asyncio.get_event_loop()
@@ -79,6 +80,7 @@ class AsyncProcessor:
             return result
         except Exception as e:
             self.logger.error(f"Error running {func.__name__} in thread: {e}")
+            # Optionally, return a default value or re-raise
             raise
 
     async def run_transcription_task(self, transcription_func: Callable[..., T],

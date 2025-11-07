@@ -90,11 +90,11 @@ Based on plan.md: Single project with transcription module in `src/transcription
 
 ### Implementation for User Story 3
 
-- [ ] T020 [US3] Create async transcription job manager in src/transcription/job_manager.py
-- [ ] T021 [US3] Implement background task queuing in src/transcription/task_queue.py
-- [ ] T022 [US3] Add async transcription endpoint to main bot in main.py
-- [ ] T023 [US3] Integrate job status checking in bot commands
-- [ ] T024 [US3] Add transcription completion notifications
+ - [X] T020 [US3] Create async transcription job manager in src/transcription/job_manager.py
+ - [X] T021 [US3] Implement background task queuing in src/transcription/task_queue.py
+ - [X] T022 [US3] Add async transcription endpoint to main bot in main.py
+ - [X] T023 [US3] Integrate job status checking in bot commands
+ - [X] T024 [US3] Add transcription completion notifications
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -104,12 +104,12 @@ Based on plan.md: Single project with transcription module in `src/transcription
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T025 [P] Add comprehensive error handling across all transcription components
-- [ ] T026 [P] Implement transcript JSON schema validation in src/transcription/validator.py
-- [ ] T027 Update main.py to integrate transcription service with existing bot commands
-- [ ] T028 Add transcription configuration management in src/config/transcription_config.py
-- [ ] T029 Update README.md with transcription capabilities and usage examples
-- [ ] T030 Run quickstart.md validation scenarios
+ - [X] T025 [P] Add comprehensive error handling across all transcription components
+ - [X] T026 [P] Implement transcript JSON schema validation in src/transcription/validator.py
+ - [X] T027 Update main.py to integrate transcription service with existing bot commands
+ - [X] T028 Add transcription configuration management in src/config/transcription_config.py
+- [X] T029 Update README.md with transcription capabilities and usage examples
+- [X] T030 Run quickstart.md validation scenarios
 
 ---
 

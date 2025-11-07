@@ -1,0 +1,7 @@
+{
+  "guild_id": "INVALID",
+  "start_time": "not_a_timestamp",
+  "end_time": 1705334410.0,
+  "sample_rate": -16000,
+  "users": "should_be_dict_not_string"
+}

@@ -1,0 +1,9 @@
+/.env
+*.mp3
+__pycache__/
+Sessions/
+player_map.yml
+player_map.yaml
+.venv/
+venv/
+.logs/

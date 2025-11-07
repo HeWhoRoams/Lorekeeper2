@@ -1,0 +1,82 @@
+openapi: 3.0.0
+info:
+  title: Discord Audio Capture API
+  version: 1.0.0
+paths:
+  /start-recording:
+    post:
+      summary: Start a new audio recording session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                guild_id:
+                  type: string
+                channel_id:
+                  type: string
+      responses:
+        '200':
+          description: Recording started
+        '400':
+          description: Error starting recording
+  /stop-recording:
+    post:
+      summary: Stop the current audio recording session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                guild_id:
+                  type: string
+                channel_id:
+                  type: string
+      responses:
+        '200':
+          description: Recording stopped, files saved
+        '400':
+          description: Error stopping recording
+  /get-session-metadata:
+    get:
+      summary: Retrieve metadata for a completed session
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Metadata returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionMetadata'
+        '404':
+          description: Session not found
+components:
+  schemas:
+    SessionMetadata:
+      type: object
+      properties:
+        guild_id:
+          type: string
+        channel_id:
+          type: string
+        participants:
+          type: array
+          items:
+            type: string
+        start_time:
+          type: string
+        end_time:
+          type: string
+        duration:
+          type: number
+        file_path:
+          type: string

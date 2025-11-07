@@ -15,6 +15,7 @@ from datetime import datetime
 from .audio_loader import AudioLoader
 from .metadata_parser import MetadataParser
 from .whisper_runner import WhisperRunner
+from .diarization_runner import DiarizationRunner
 from .transcript_writer import TranscriptWriter
 from .async_processor import run_transcription_async
 from ..models.transcript_segment import TranscriptSegment
@@ -29,22 +30,26 @@ class TranscriptionService(ABC):
     transcription results with optional speaker diarization.
     """
 
-    def __init__(self, model_name: str = "large-v3", enable_diarization: bool = False):
+    def __init__(self, model_name: str = "large-v3", enable_diarization: bool = False,
+                 hf_auth_token: Optional[str] = None):
         """
         Initialize the transcription service.
 
         Args:
             model_name: WhisperX model to use (default: "large-v3")
             enable_diarization: Whether to perform speaker diarization
+            hf_auth_token: HuggingFace authentication token for pyannote models
         """
         self.model_name = model_name
         self.enable_diarization = enable_diarization
+        self.hf_auth_token = hf_auth_token
         self.logger = logging.getLogger(self.__class__.__name__)
 
         # Initialize components
         self.audio_loader = AudioLoader()
         self.metadata_parser = MetadataParser()
         self.whisper_runner = WhisperRunner(model_name)
+        self.diarization_runner = DiarizationRunner(model_name, hf_auth_token) if enable_diarization else None
         self.transcript_writer = TranscriptWriter()
 
     def _create_transcript_result(self, segments: List[TranscriptSegment],
@@ -203,11 +208,18 @@ class TranscriptionService(ABC):
                 language = metadata["language"]
 
             # Run transcription in thread pool
-            segments, log = await run_transcription_async(
-                self.whisper_runner.transcribe_audio,
-                audio_path,
-                language
-            )
+            if self.enable_diarization and self.diarization_runner:
+                segments, log = await run_transcription_async(
+                    self.diarization_runner.transcribe_with_diarization,
+                    audio_path,
+                    language
+                )
+            else:
+                segments, log = await run_transcription_async(
+                    self.whisper_runner.transcribe_audio,
+                    audio_path,
+                    language
+                )
 
             # Generate output paths
             output_dir = audio_path.parent
@@ -248,3 +260,65 @@ class TranscriptionService(ABC):
                 "log": self._log_to_dict(error_log),
                 "error": str(e)
             }
+
+    def enable_diarization(self, hf_auth_token: Optional[str] = None) -> bool:
+        """
+        Enable speaker diarization for future transcriptions.
+
+        Args:
+            hf_auth_token: HuggingFace authentication token
+
+        Returns:
+            True if diarization was successfully enabled
+        """
+        try:
+            self.enable_diarization = True
+            self.hf_auth_token = hf_auth_token or self.hf_auth_token
+            self.diarization_runner = DiarizationRunner(self.model_name, self.hf_auth_token)
+            self.logger.info("Speaker diarization enabled")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to enable diarization: {e}")
+            self.enable_diarization = False
+            return False
+
+    def disable_diarization(self) -> None:
+        """Disable speaker diarization."""
+        self.enable_diarization = False
+        self.diarization_runner = None
+        self.logger.info("Speaker diarization disabled")
+
+    def get_diarization_status(self) -> Dict[str, Any]:
+        """
+        Get the current diarization configuration and status.
+
+        Returns:
+            Dictionary with diarization status information
+        """
+        status = {
+            "diarization_enabled": self.enable_diarization,
+            "auth_token_configured": self.hf_auth_token is not None,
+        }
+
+        if self.diarization_runner:
+            status.update(self.diarization_runner.get_diarization_status())
+        else:
+            status["diarization_available"] = False
+            status["error"] = "Diarization not initialized"
+
+        return status
+
+    def validate_multi_speaker_audio(self, audio_path: Path) -> Dict[str, Any]:
+        """
+        Validate if audio would benefit from speaker diarization.
+
+        Args:
+            audio_path: Path to audio file
+
+        Returns:
+            Dictionary with validation results
+        """
+        if not self.diarization_runner:
+            return {"error": "Diarization not enabled"}
+
+        return self.diarization_runner.validate_multi_speaker_audio(audio_path)

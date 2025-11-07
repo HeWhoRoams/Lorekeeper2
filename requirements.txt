@@ -22,6 +22,9 @@ speechrecognition
 # WhisperX for transcription with speaker diarization
 whisperx
 
+# Speaker diarization
+pyannote.audio
+
 # torch support of cuda 12
 #--extra-index-url https://download.pytorch.org/whl/cu121
 #torch

@@ -72,11 +72,11 @@ Based on plan.md: Single project with transcription module in `src/transcription
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Add pyannote.audio dependency to requirements.txt
-- [ ] T016 [US2] Implement speaker diarization service in src/transcription/diarization_service.py
-- [ ] T017 [US2] Integrate diarization with WhisperX alignment in src/transcription/diarization_runner.py
-- [ ] T018 [US2] Update transcript writer to include speaker labels in output
-- [ ] T019 [US2] Add diarization configuration options to transcription service
+- [x] T015 [US2] Add pyannote.audio dependency to requirements.txt
+- [x] T016 [US2] Implement speaker diarization service in src/transcription/diarization_service.py
+- [x] T017 [US2] Integrate diarization with WhisperX alignment in src/transcription/diarization_runner.py
+- [x] T018 [US2] Update transcript writer to include speaker labels in output
+- [x] T019 [US2] Add diarization configuration options to transcription service
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -166,7 +166,7 @@ Task: "Implement WhisperX transcription runner in src/transcription/whisper_runn
 ### MVP First (User Story 1 Only)
 
 1. Complete Phase 1: Setup
-2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
+2. Complete Phase 2: Foundational
 3. Complete Phase 3: User Story 1
 4. **STOP and VALIDATE**: Test User Story 1 independently
 5. Deploy/demo if ready

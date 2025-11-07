@@ -24,20 +24,23 @@ class DiarizationRunner:
     complete multi-speaker audio transcription with speaker attribution.
     """
 
-    def __init__(self, model_name: str = "large-v3", auth_token: Optional[str] = None):
+    def __init__(self, model_name: str = "large-v3", auth_token: Optional[str] = None,
+                 min_speakers: int = 1, max_speakers: int = 10):
         """
         Initialize the diarization runner.
 
         Args:
             model_name: WhisperX model to use
             auth_token: HuggingFace authentication token for pyannote
+            min_speakers: Minimum number of speakers to detect (default: 1)
+            max_speakers: Maximum number of speakers to detect (default: 10)
         """
         self.model_name = model_name
         self.logger = logging.getLogger(self.__class__.__name__)
 
         # Initialize components
         self.whisper_runner = WhisperRunner(model_name)
-        self.diarization_service = DiarizationService(auth_token)
+        self.diarization_service = DiarizationService(auth_token, min_speakers, max_speakers)
 
     def transcribe_with_diarization(self, audio_path: Path,
                                   language: str = "en") -> Tuple[List[TranscriptSegment], TranscriptionLog]:
@@ -95,14 +98,6 @@ class DiarizationRunner:
             error_msg = f"Transcription with diarization failed: {e}"
             self.logger.error(error_msg)
 
-            # Create error log
-            error_log = TranscriptionLog.create_log(
-                model_name=self.model_name,
-                start_time=start_time,
-                accuracy_metrics={},
-                errors=[str(e)]
-            )
-
             raise RuntimeError(error_msg) from e
 
     def get_diarization_status(self) -> Dict[str, Any]:
@@ -114,7 +109,7 @@ class DiarizationRunner:
         """
         status = {
             "diarization_available": self.diarization_service.pipeline is not None,
-            "whisper_available": True,  # Assume available if we got this far
+            "whisper_available": self.whisper_runner is not None and self.whisper_runner.model is not None,
         }
 
         if self.diarization_service.pipeline:
@@ -123,16 +118,27 @@ class DiarizationRunner:
             status["error"] = "pyannote.audio not available or initialization failed"
 
         return status
-
-    def validate_multi_speaker_audio(self, audio_path: Path) -> Dict[str, Any]:
+    def estimate_multi_speaker_heuristic(self, audio_path: Path) -> Dict[str, Any]:
         """
-        Validate if audio contains multiple speakers and estimate diarization quality.
+        Estimate if audio likely contains multiple speakers using duration-based heuristics.
+
+        WARNING: This is a naive duration-only heuristic, NOT actual audio content analysis.
+        It assumes longer recordings are more likely to have multiple speakers, which may be
+        incorrect for podcasts, lectures, or recordings with long silences.
+
+        Edge cases:
+        - Short recordings (< 5 min): Always assumes single speaker
+        - Long recordings (> 5 min): Assumes 2-5 speakers based on duration
+        - Podcasts/lectures: May incorrectly recommend diarization
+        - Meetings with long silences: May overestimate speaker count
+
+        For accurate speaker detection, use actual audio analysis tools.
 
         Args:
             audio_path: Path to audio file
 
         Returns:
-            Dictionary with validation results
+            Dictionary with heuristic-based estimation results
         """
         validation = {
             "audio_path": str(audio_path),
@@ -147,8 +153,8 @@ class DiarizationRunner:
             if audio_info:
                 duration = audio_info.get("duration_seconds", 0)
 
-                # Simple heuristics for multi-speaker detection
-                # (This is a basic implementation - could be enhanced with voice activity detection)
+                # Naive duration-based heuristic for multi-speaker estimation
+                # This is NOT actual audio analysis - just a rough guess based on length
                 if duration > 300:  # Longer than 5 minutes
                     validation["multi_speaker_likely"] = True
                     validation["estimated_speakers"] = min(5, max(2, int(duration / 180)))  # Rough estimate
@@ -157,7 +163,7 @@ class DiarizationRunner:
                 validation["duration_seconds"] = duration
 
         except Exception as e:
-            self.logger.warning(f"Could not validate audio for multi-speaker detection: {e}")
+            self.logger.warning(f"Could not apply multi-speaker heuristic: {e}")
             validation["error"] = str(e)
 
         return validation

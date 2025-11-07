@@ -7,7 +7,7 @@ ensuring they are suitable for WhisperX processing.
 
 import logging
 from pathlib import Path
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple, Any, Dict
 import numpy as np
 
 try:
@@ -89,6 +89,20 @@ class AudioLoader:
             error_msg = f"Failed to load audio file {audio_path}: {e}"
             self.logger.error(error_msg)
             raise RuntimeError(error_msg) from e
+
+    def resample_audio(self, audio: np.ndarray, original_rate: int, target_rate: int) -> np.ndarray:
+        """
+        Public method to resample audio to target sample rate.
+
+        Args:
+            audio: Audio array
+            original_rate: Original sample rate
+            target_rate: Target sample rate
+
+        Returns:
+            Resampled audio array
+        """
+        return self._resample_audio(audio, original_rate, target_rate)
 
     def _resample_audio(self, audio: np.ndarray, original_rate: int, target_rate: int) -> np.ndarray:
         """

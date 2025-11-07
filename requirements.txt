@@ -23,7 +23,10 @@ speechrecognition
 whisperx
 
 # Speaker diarization
-pyannote.audio
+pyannote.audio==3.0.1
+
+# ONNX Runtime for pyannote.audio (CPU version to match torch CPU build)
+onnxruntime
 
 # torch support of cuda 12
 #--extra-index-url https://download.pytorch.org/whl/cu121

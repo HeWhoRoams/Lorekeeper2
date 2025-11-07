@@ -32,15 +32,19 @@ class DiarizationService:
     to transcription segments for multi-speaker conversations.
     """
 
-    def __init__(self, auth_token: Optional[str] = None):
+    def __init__(self, auth_token: Optional[str] = None, min_speakers: int = 1, max_speakers: int = 10):
         """
         Initialize the diarization service.
 
         Args:
             auth_token: HuggingFace authentication token for pyannote models
+            min_speakers: Minimum number of speakers to detect (default: 1)
+            max_speakers: Maximum number of speakers to detect (default: 10)
         """
         self.logger = logging.getLogger(self.__class__.__name__)
         self.auth_token = auth_token or self._get_auth_token()
+        self.min_speakers = min_speakers
+        self.max_speakers = max_speakers
         self.pipeline: Optional[Pipeline] = None
         self.audio_loader = AudioLoader()
 
@@ -56,7 +60,6 @@ class DiarizationService:
 
     def _get_auth_token(self) -> Optional[str]:
         """Get HuggingFace authentication token from environment."""
-        import os
         return os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_TOKEN")
 
     def _initialize_pipeline(self) -> None:
@@ -76,8 +79,8 @@ class DiarizationService:
         # Configure pipeline for better performance
         if hasattr(self.pipeline, 'parameters'):
             # Set minimum speaker duration (seconds)
-            self.pipeline.parameters.min_speakers = 1
-            self.pipeline.parameters.max_speakers = 10  # Reasonable upper limit
+            self.pipeline.parameters.min_speakers = self.min_speakers
+            self.pipeline.parameters.max_speakers = self.max_speakers  # Reasonable upper limit
 
         self.logger.info("Diarization pipeline initialized successfully")
 
@@ -104,7 +107,7 @@ class DiarizationService:
             # Convert to format expected by pyannote (mono, appropriate sample rate)
             if sample_rate != 16000:
                 # Resample if needed
-                audio = self.audio_loader._resample_audio(audio, sample_rate, 16000)
+                audio = self.audio_loader.resample_audio(audio, sample_rate, 16000)
                 sample_rate = 16000
 
             # Create waveform dictionary as expected by pyannote
@@ -153,12 +156,15 @@ class DiarizationService:
         """
         Assign speaker labels to transcript segments based on diarization results.
 
+        Creates new TranscriptSegment instances with speaker labels assigned based on
+        temporal overlap with diarization results. Input segments are not modified.
+
         Args:
             transcript_segments: List of transcript segments from WhisperX
             diarization_result: Diarization result with speaker segments
 
         Returns:
-            Transcript segments with speaker labels assigned
+            New list of TranscriptSegment instances with speaker labels assigned
         """
         if not diarization_result or "segments" not in diarization_result:
             self.logger.warning("No diarization results available for speaker assignment")
@@ -175,12 +181,22 @@ class DiarizationService:
                 speaker_segments
             )
 
+            # Create a new segment with speaker label assigned
+            speaker_label = None
             if overlapping_speakers:
                 # Assign the speaker with the most overlap
-                best_speaker = max(overlapping_speakers.items(), key=lambda x: x[1])[0]
-                transcript_seg.speaker_label = best_speaker
+                speaker_label = max(overlapping_speakers.items(), key=lambda x: x[1])[0]
 
-            updated_segments.append(transcript_seg)
+            # Create new TranscriptSegment instance to avoid mutating input
+            new_segment = TranscriptSegment(
+                start_time=transcript_seg.start_time,
+                end_time=transcript_seg.end_time,
+                text=transcript_seg.text,
+                speaker_label=speaker_label,
+                words=transcript_seg.words
+            )
+
+            updated_segments.append(new_segment)
 
         return updated_segments
 

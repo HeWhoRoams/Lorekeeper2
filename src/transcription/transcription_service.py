@@ -31,7 +31,7 @@ class TranscriptionService(ABC):
     """
 
     def __init__(self, model_name: str = "large-v3", enable_diarization: bool = False,
-                 hf_auth_token: Optional[str] = None):
+                 hf_auth_token: Optional[str] = None, min_speakers: int = 1, max_speakers: int = 10):
         """
         Initialize the transcription service.
 
@@ -39,17 +39,21 @@ class TranscriptionService(ABC):
             model_name: WhisperX model to use (default: "large-v3")
             enable_diarization: Whether to perform speaker diarization
             hf_auth_token: HuggingFace authentication token for pyannote models
+            min_speakers: Minimum number of speakers to detect (default: 1)
+            max_speakers: Maximum number of speakers to detect (default: 10)
         """
         self.model_name = model_name
-        self.enable_diarization = enable_diarization
+        self._diarization_enabled = enable_diarization
         self.hf_auth_token = hf_auth_token
+        self.min_speakers = min_speakers
+        self.max_speakers = max_speakers
         self.logger = logging.getLogger(self.__class__.__name__)
 
         # Initialize components
         self.audio_loader = AudioLoader()
         self.metadata_parser = MetadataParser()
         self.whisper_runner = WhisperRunner(model_name)
-        self.diarization_runner = DiarizationRunner(model_name, hf_auth_token) if enable_diarization else None
+        self.diarization_runner = DiarizationRunner(model_name, hf_auth_token, min_speakers, max_speakers) if enable_diarization else None
         self.transcript_writer = TranscriptWriter()
 
     def _create_transcript_result(self, segments: List[TranscriptSegment],
@@ -181,34 +185,28 @@ class TranscriptionService(ABC):
     async def transcribe_audio(self, audio_path: Path, metadata_path: Optional[Path] = None) -> Dict[str, Any]:
         """
         Transcribe an audio file using WhisperX.
-
         Args:
             audio_path: Path to the audio file to transcribe
             metadata_path: Optional path to session metadata JSON
-
         Returns:
             Dictionary containing transcription results and paths
         """
         try:
             self.logger.info(f"Starting transcription for: {audio_path}")
-
             # Validate audio file
             self._validate_audio_file(audio_path)
-
             # Load metadata if provided
             metadata = None
             session_info = None
             if metadata_path:
                 metadata = self.metadata_parser.load_metadata(metadata_path)
                 session_info = self.metadata_parser.extract_session_info(metadata)
-
             # Extract language from metadata or default to English
             language = "en"
             if metadata and "language" in metadata:
                 language = metadata["language"]
-
             # Run transcription in thread pool
-            if self.enable_diarization and self.diarization_runner:
+            if self.diarization_enabled and self.diarization_runner:
                 segments, log = await run_transcription_async(
                     self.diarization_runner.transcribe_with_diarization,
                     audio_path,
@@ -220,31 +218,24 @@ class TranscriptionService(ABC):
                     audio_path,
                     language
                 )
-
             # Generate output paths
             output_dir = audio_path.parent
             base_name = audio_path.stem
             transcript_path = output_dir / f"{base_name}_transcript.json"
             log_path = output_dir / f"{base_name}_transcription.log"
-
             # Write transcript
             self.transcript_writer.write_transcript(segments, log, transcript_path, session_info)
-
             # Write log
             self.transcript_writer.write_log_only(log, log_path)
-
             # Build result
             result = self._create_transcript_result(segments, log)
             result["transcript_path"] = str(transcript_path)
             result["log_path"] = str(log_path)
-
             self.logger.info(f"Transcription completed successfully: {transcript_path}")
             return result
-
         except Exception as e:
             error_msg = f"Transcription failed for {audio_path}: {e}"
             self.logger.error(error_msg)
-
             # Create error result
             error_log = TranscriptionLog.create_log(
                 model_name=self.model_name,
@@ -252,7 +243,6 @@ class TranscriptionService(ABC):
                 accuracy_metrics={},
                 errors=[str(e)]
             )
-
             return {
                 "transcript_path": None,
                 "log_path": None,
@@ -260,34 +250,36 @@ class TranscriptionService(ABC):
                 "log": self._log_to_dict(error_log),
                 "error": str(e)
             }
-
-    def enable_diarization(self, hf_auth_token: Optional[str] = None) -> bool:
+    def enable_diarization(self, hf_auth_token: Optional[str] = None, min_speakers: Optional[int] = None, max_speakers: Optional[int] = None) -> bool:
         """
         Enable speaker diarization for future transcriptions.
 
         Args:
             hf_auth_token: HuggingFace authentication token
+            min_speakers: Minimum number of speakers to detect (uses current value if None)
+            max_speakers: Maximum number of speakers to detect (uses current value if None)
 
         Returns:
             True if diarization was successfully enabled
         """
         try:
-            self.enable_diarization = True
+            self._diarization_enabled = True
             self.hf_auth_token = hf_auth_token or self.hf_auth_token
-            self.diarization_runner = DiarizationRunner(self.model_name, self.hf_auth_token)
+            # Use provided values or current instance values
+            min_spk = min_speakers if min_speakers is not None else self.min_speakers
+            max_spk = max_speakers if max_speakers is not None else self.max_speakers
+            self.diarization_runner = DiarizationRunner(self.model_name, self.hf_auth_token, min_spk, max_spk)
             self.logger.info("Speaker diarization enabled")
             return True
         except Exception as e:
             self.logger.error(f"Failed to enable diarization: {e}")
-            self.enable_diarization = False
+            self._diarization_enabled = False
             return False
-
     def disable_diarization(self) -> None:
         """Disable speaker diarization."""
-        self.enable_diarization = False
+        self.diarization_enabled = False  # Updated to use renamed attribute
         self.diarization_runner = None
         self.logger.info("Speaker diarization disabled")
-
     def get_diarization_status(self) -> Dict[str, Any]:
         """
         Get the current diarization configuration and status.
@@ -296,29 +288,28 @@ class TranscriptionService(ABC):
             Dictionary with diarization status information
         """
         status = {
-            "diarization_enabled": self.enable_diarization,
+            "diarization_enabled": self.diarization_enabled,  # Updated to use renamed attribute
             "auth_token_configured": self.hf_auth_token is not None,
         }
-
         if self.diarization_runner:
             status.update(self.diarization_runner.get_diarization_status())
         else:
             status["diarization_available"] = False
             status["error"] = "Diarization not initialized"
-
         return status
-
-    def validate_multi_speaker_audio(self, audio_path: Path) -> Dict[str, Any]:
+    def estimate_multi_speaker_heuristic(self, audio_path: Path) -> Dict[str, Any]:
         """
-        Validate if audio would benefit from speaker diarization.
+        Estimate if audio would benefit from speaker diarization using duration heuristics.
+
+        Delegates to the diarization runner's heuristic estimation. Note that this uses
+        only duration-based heuristics and is not actual audio content analysis.
 
         Args:
             audio_path: Path to audio file
 
         Returns:
-            Dictionary with validation results
+            Dictionary with heuristic-based estimation results
         """
         if not self.diarization_runner:
             return {"error": "Diarization not enabled"}
-
-        return self.diarization_runner.validate_multi_speaker_audio(audio_path)
+        return self.diarization_runner.estimate_multi_speaker_heuristic(audio_path)
